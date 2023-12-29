@@ -8,7 +8,7 @@ mkdir -p data/nuscenes && cd data/nuscenes
 ln -s /robodata/public_datasets/nuscenes/* .
 ```
 
-2. Run the commands below to create the `pretrained` directory at the project's root directory. Then, download pretrained model weights directly from the Github README.md links.
+2. Run the commands below to create the `pretrained` directory at the project's root directory. Then, download pretrained model weights directly from the Github README.md links in the Results section. Download the weights tot he `pretrained` directory. The commands below assume you are in the project root directory
 ```
 mkdir -p pretrained
 cd pretrained
