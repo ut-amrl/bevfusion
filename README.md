@@ -1,3 +1,30 @@
+# AMRL Modifications
+
+## Setting up Docker Container
+
+1. Set up the data directory
+```
+mkdir -p data/nuscenes && cd data/nuscenes
+ln -s /robodata/public_datasets/nuscenes/* .
+```
+
+2. Run the commands below to create the `pretrained` directory at the project's root directory. Then, download pretrained model weights directly from the Github README.md links.
+```
+mkdir -p pretrained
+cd pretrained
+```
+
+3. Build the docker image. Commands below assume you are the project root directory.
+```
+cd docker && docker build . -t bevfusion
+cd ..
+```
+
+4. Start the docker container from the project root directory.
+```
+docker run -it -v `pwd`:/home/bevfusion --shm-size 16g bevfusion /bin/bash
+```
+
 # BEVFusion
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/bevfusion-multi-task-multi-sensor-fusion-with/3d-object-detection-on-nuscenes)](https://paperswithcode.com/sota/3d-object-detection-on-nuscenes?p=bevfusion-multi-task-multi-sensor-fusion-with)
