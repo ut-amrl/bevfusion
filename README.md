@@ -31,6 +31,13 @@ cd home/bevfusion
 python setup.py develop
 ```
 
+6. Run the following to create a symbolic link to the data directory. (TODO: Deprecate this in the future)
+```
+mkdir -p /scratch/arthurz/openmmlab/nuscenes
+ln -s /home/nuscenes /scratch/arthurz/openmmlab
+```
+
+
 # BEVFusion
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/bevfusion-multi-task-multi-sensor-fusion-with/3d-object-detection-on-nuscenes)](https://paperswithcode.com/sota/3d-object-detection-on-nuscenes?p=bevfusion-multi-task-multi-sensor-fusion-with)
