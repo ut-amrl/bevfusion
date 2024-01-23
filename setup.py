@@ -76,6 +76,12 @@ if __name__ == "__main__":
                 extra_args=["-w", "-std=c++14"],
             ),
             make_cuda_ext(
+                name="feature_decorator_ext",
+                module="mmdet3d.ops.feature_decorator",
+                sources=["src/feature_decorator.cpp"],
+                sources_cuda=["src/feature_decorator_cuda.cu"],
+            ),
+            make_cuda_ext(
                 name="bev_pool_ext",
                 module="mmdet3d.ops.bev_pool",
                 sources=[

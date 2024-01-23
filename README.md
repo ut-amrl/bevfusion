@@ -25,6 +25,12 @@ cd ..
 docker run -it -v `pwd`:/home/bevfusion --shm-size 16g bevfusion /bin/bash
 ```
 
+5. Install mmdet3d and bevfusion. This will build static tools and install them into the docker container.
+```
+cd home/bevfusion
+python setup.py develop
+```
+
 # BEVFusion
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/bevfusion-multi-task-multi-sensor-fusion-with/3d-object-detection-on-nuscenes)](https://paperswithcode.com/sota/3d-object-detection-on-nuscenes?p=bevfusion-multi-task-multi-sensor-fusion-with)
