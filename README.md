@@ -15,14 +15,13 @@ cd pretrained
 ```
 
 3. Build the docker image. Commands below assume you are the project root directory.
-```
-cd docker && docker build . -t bevfusion
-cd ..
+```bash
+bash build_docker.sh
 ```
 
 4. Start the docker container from the project root directory.
-```
-docker run -it -v `pwd`:/home/bevfusion --shm-size 16g bevfusion /bin/bash
+```bash
+bash start_docker.sh
 ```
 
 5. Install mmdet3d and bevfusion. This will build static tools and install them into the docker container.
