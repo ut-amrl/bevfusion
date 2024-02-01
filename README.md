@@ -2,10 +2,9 @@
 
 ## Setting up Docker Container
 
-1. Set up the data directory
+1. Go to the root of this repository and set up the data directory. Make sure the data directory is EMPTY! 
 ```
-mkdir -p data/nuscenes && cd data/nuscenes
-ln -s /robodata/public_datasets/nuscenes/* .
+mkdir -p data
 ```
 
 2. Run the commands below to create the `pretrained` directory at the project's root directory. Then, download pretrained model weights directly from the Github README.md links in the Results section. Download the weights tot he `pretrained` directory. The commands below assume you are in the project root directory
