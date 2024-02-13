@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from mmcv import Config
 from mmcv.parallel import MMDistributedDataParallel
-from mmcv.runner import load_checkpoint
+from mmcv.runner import load_checkpoint, wrap_fp16_model
 from torchpack import distributed as dist
 from torchpack.utils.config import configs
 #from torchpack.utils.tqdm import tqdm
@@ -41,7 +41,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser()
     parser.add_argument("config", metavar="FILE")
-    parser.add_argument("--mode", type=str, default="gt", choices=["gt", "pred"])
+    parser.add_argument("--mode", type=str, default="gt", choices=["gt", "pred", "gtpred"])
     parser.add_argument("--checkpoint", type=str, default=None)
     parser.add_argument("--split", type=str, default="val", choices=["train", "val"])
     parser.add_argument("--bbox-classes", nargs="+", type=int, default=None)
@@ -69,36 +69,43 @@ def main() -> None:
     )
 
     # build the model and load checkpoint
-    if args.mode == "pred":
+    if args.mode == "pred" or args.mode == "gtpred":
         model = build_model(cfg.model)
+        fp16_cfg = cfg.get("fp16", None)
+        print("Built model")
+        if fp16_cfg is not None:
+            wrap_fp16_model(model)
         load_checkpoint(model, args.checkpoint, map_location="cpu")
-
+        print("Loaded model from checkpoint")
         model = MMDistributedDataParallel(
             model.cuda(),
             device_ids=[torch.cuda.current_device()],
             broadcast_buffers=False,
         )
         model.eval()
-
+    idx = 0
     for data in tqdm(dataflow):
+        # if idx > 5:
+        #     break
         metas = data["metas"].data[0][0]
         name = "{}-{}".format(metas["timestamp"], metas["token"])
 
-        if args.mode == "pred":
+        if args.mode == "pred" or args.mode == "gtpred":
             with torch.inference_mode():
                 outputs = model(**data)
 
+        gt_bboxes, gt_labels, bboxes, scores, labels = None, None, None, None, None
         if args.mode == "gt" and "gt_bboxes_3d" in data:
-            bboxes = data["gt_bboxes_3d"].data[0][0].tensor.numpy()
-            labels = data["gt_labels_3d"].data[0][0].numpy()
+            gt_bboxes = data["gt_bboxes_3d"].data[0][0].tensor.numpy()
+            gt_labels = data["gt_labels_3d"].data[0][0].numpy()
 
             if args.bbox_classes is not None:
-                indices = np.isin(labels, args.bbox_classes)
-                bboxes = bboxes[indices]
-                labels = labels[indices]
+                indices = np.isin(gt_labels, args.bbox_classes)
+                gt_bboxes = gt_bboxes[indices]
+                gt_labels = gt_labels[indices]
 
-            bboxes[..., 2] -= bboxes[..., 5] / 2
-            bboxes = LiDARInstance3DBoxes(bboxes, box_dim=9)
+            gt_bboxes[..., 2] -= gt_bboxes[..., 5] / 2
+            gt_bboxes = LiDARInstance3DBoxes(gt_bboxes, box_dim=9)
         elif args.mode == "pred" and "boxes_3d" in outputs[0]:
             bboxes = outputs[0]["boxes_3d"].tensor.numpy()
             scores = outputs[0]["scores_3d"].numpy()
@@ -116,6 +123,39 @@ def main() -> None:
                 scores = scores[indices]
                 labels = labels[indices]
 
+            bboxes[..., 2] -= bboxes[..., 5] / 2
+            bboxes = LiDARInstance3DBoxes(bboxes, box_dim=9)
+
+
+        # Both GT and Pred mode
+        elif args.mode == "gtpred" and "gt_bboxes_3d" in data and "boxes_3d" in outputs[0]:
+            gt_bboxes = data["gt_bboxes_3d"].data[0][0].tensor.numpy()
+            gt_labels = data["gt_labels_3d"].data[0][0].numpy()
+            bboxes = outputs[0]["boxes_3d"].tensor.numpy()
+            scores = outputs[0]["scores_3d"].numpy()
+            labels = outputs[0]["labels_3d"].numpy()
+
+            if args.bbox_classes is not None:
+                # Pred
+                indices = np.isin(labels, args.bbox_classes)
+                bboxes = bboxes[indices]
+                scores = scores[indices]
+                labels = labels[indices]
+                # Ground Truth
+                gt_bboxes = gt_bboxes[indices]
+                gt_labels = gt_labels[indices]
+
+            if args.bbox_score is not None:
+                indices = scores >= args.bbox_score
+                bboxes = bboxes[indices]
+                scores = scores[indices]
+                labels = labels[indices]
+            
+            # Ground Truth
+            gt_bboxes[..., 2] -= gt_bboxes[..., 5] / 2
+            gt_bboxes = LiDARInstance3DBoxes(gt_bboxes, box_dim=9)
+
+            # Pred
             bboxes[..., 2] -= bboxes[..., 5] / 2
             bboxes = LiDARInstance3DBoxes(bboxes, box_dim=9)
         else:
@@ -145,11 +185,14 @@ def main() -> None:
 
         if "points" in data:
             lidar = data["points"].data[0][0].numpy()
+
             visualize_lidar(
                 os.path.join(args.out_dir, "lidar", f"{name}.png"),
                 lidar,
                 bboxes=bboxes,
+                gt_bboxes=gt_bboxes,
                 labels=labels,
+                gt_labels=gt_labels,
                 xlim=[cfg.point_cloud_range[d] for d in [0, 3]],
                 ylim=[cfg.point_cloud_range[d] for d in [1, 4]],
                 classes=cfg.object_classes,
@@ -161,6 +204,8 @@ def main() -> None:
                 masks,
                 classes=cfg.map_classes,
             )
+
+        idx += 1
 
 
 if __name__ == "__main__":

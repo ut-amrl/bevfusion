@@ -25,6 +25,20 @@ OBJECT_PALETTE = {
     "traffic_cone": (47, 79, 79),
 }
 
+
+GT_OBJECT_PALETTE = {
+    "car": (255, 188, 0),
+    "truck": (255, 121, 71),
+    "construction_vehicle": (233, 169, 70),
+    "bus": (255, 99, 0),
+    "trailer": (255, 170, 0),
+    "barrier": (112, 124, 144),
+    "motorcycle": (255, 61, 75),
+    "bicycle": (250, 125, 147),
+    "pedestrian": (0, 230, 230),
+    "traffic_cone": (47, 75, 79)
+}
+
 MAP_PALETTE = {
     "drivable_area": (166, 206, 227),
     "road_segment": (31, 120, 180),
@@ -115,13 +129,16 @@ def visualize_lidar(
     lidar: Optional[np.ndarray] = None,
     *,
     bboxes: Optional[LiDARInstance3DBoxes] = None,
+    gt_bboxes: Optional[LiDARInstance3DBoxes] = None,
     labels: Optional[np.ndarray] = None,
+    gt_labels: Optional[np.ndarray] = None,
     classes: Optional[List[str]] = None,
     xlim: Tuple[float, float] = (-50, 50),
     ylim: Tuple[float, float] = (-50, 50),
     color: Optional[Tuple[int, int, int]] = None,
     radius: float = 15,
-    thickness: float = 25,
+    thickness: float = 5,
+    gt_thickness: float = 10,
 ) -> None:
     fig = plt.figure(figsize=(xlim[1] - xlim[0], ylim[1] - ylim[0]))
 
@@ -136,10 +153,10 @@ def visualize_lidar(
             lidar[:, 0],
             lidar[:, 1],
             s=radius,
-            c="white",
+            c='grey',
         )
 
-    if bboxes is not None and len(bboxes) > 0:
+    if (bboxes is not None and len(bboxes) > 0):
         coords = bboxes.corners[:, [0, 3, 7, 4, 0], :2]
         for index in range(coords.shape[0]):
             name = classes[labels[index]]
@@ -148,6 +165,17 @@ def visualize_lidar(
                 coords[index, :, 1],
                 linewidth=thickness,
                 color=np.array(color or OBJECT_PALETTE[name]) / 255,
+            )
+    if (gt_bboxes is not None and len(gt_bboxes) > 0):
+        gt_coords = gt_bboxes.corners[:, [0, 3, 7, 4, 0], :2]
+        for index in range(gt_coords.shape[0]):
+            name = classes[gt_labels[index]]
+            plt.plot(
+                gt_coords[index, :, 0],
+                gt_coords[index, :, 1],
+                linestyle='dotted',
+                linewidth=gt_thickness,
+                color=np.array(color or GT_OBJECT_PALETTE[name])/255,
             )
 
     mmcv.mkdir_or_exist(os.path.dirname(fpath))
