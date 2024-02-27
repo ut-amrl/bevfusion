@@ -2,10 +2,10 @@ import cv2
 import os
 from tqdm import tqdm
 
-frame_directory = 'viz_gt/lidar'
-video_path = 'viz_gt/nuscenes_lidar.avi'
+frame_directory = 'viz/camera-5'
+video_path = 'viz/nuscenes_camera5.mp4'
 frame_rate = 10  # frames per second
-resolution = (831, 831)  # Adjust based on your frame size
+resolution = (800, 450)  # Adjust based on your frame size
 
 # Define the codec and create VideoWriter object
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
